@@ -43,14 +43,16 @@ After the kafka-cluster is stared with kafka-connect:
 
 `curl -XDELETE http://localhost:8083/connectors/datagen-stocktrades`
 
-## plaindemoproducer
+## demo-applications
+
+### plaindemoproducer
 
 Simple producer producing messages to a topic.
 
-## plaindemoconsumer
+### plaindemoconsumer
 
 Simple producer consuming messages from a topic.
 
-## plaindemostreams
+### plaindemostreams
 
 Simple kafka-streams application exploring streams functionality, working on data from kafka-connect-codegen.
