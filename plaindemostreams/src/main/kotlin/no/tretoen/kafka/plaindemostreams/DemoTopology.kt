@@ -1,9 +1,6 @@
 package no.tretoen.kafka.plaindemostreams
 
-import no.tretoen.kafka.plaindemostreams.serdes.StockTrade
-import no.tretoen.kafka.plaindemostreams.serdes.StockTradeAggregate
-import no.tretoen.kafka.plaindemostreams.serdes.StockTradeAggregateSerde
-import no.tretoen.kafka.plaindemostreams.serdes.StockTradeSerde
+import no.tretoen.kafka.plaindemostreams.serdes.*
 import org.apache.kafka.common.serialization.Serdes
 import org.apache.kafka.common.utils.Bytes
 import org.apache.kafka.streams.StreamsBuilder
@@ -18,7 +15,7 @@ import java.time.Duration
 
 class DemoTopology {
 
-    fun create(): Topology {
+    fun create(stockTradeStoreName: String): Topology {
 
         val log: Logger = LoggerFactory.getLogger(DemoTopology::class.java)
 
@@ -30,11 +27,11 @@ class DemoTopology {
         stream
             //.peek { k, v -> log.info("Got message with key=$k, value=$v") }
             .groupByKey()
-            .windowedBy(TimeWindows.of(Duration.ofSeconds(10)).advanceBy(Duration.ofSeconds(10)))
+            .windowedBy(TimeWindows.of(Duration.ofSeconds(10)))
             .aggregate(
-                {StockTradeAggregate("TBD", 0, 0)},
+                { initialStocktradeAggregate() },
                 { _, v: StockTrade, a: StockTradeAggregate -> a.add(v) },
-                Materialized.`as`<String?, StockTradeAggregate?, WindowStore<Bytes, ByteArray>?>("STOCK_TRADES_STORE").withValueSerde(
+                Materialized.`as`<String?, StockTradeAggregate?, WindowStore<Bytes, ByteArray>?>(stockTradeStoreName).withValueSerde(
                     stockTradeAggregateSerde
                 )
             )

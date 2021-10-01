@@ -2,6 +2,7 @@ package no.tretoen.kafka.plaindemostreams.serdes
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
+import no.tretoen.kafka.plaindemostreams.serdes.StockTradeAggregate.Companion.initial
 import org.apache.kafka.common.errors.SerializationException
 import org.apache.kafka.common.serialization.Deserializer
 import org.apache.kafka.common.serialization.Serdes.WrapperSerde
@@ -15,7 +16,16 @@ data class StockTrade(
     val price: Int,
     val account: String,
     val userid: String
-)
+) {
+    fun getDelta(): Int {
+        val direction = when (side) {
+            "BUY" -> 1
+            "SELL" -> -1
+            else -> 0
+        }
+        return quantity * price * direction
+    }
+}
 
 data class StockTradeAggregate(
     val symbol: String,
@@ -23,21 +33,19 @@ data class StockTradeAggregate(
     val balance: Int
 ) {
     fun add(stockTrade: StockTrade): StockTradeAggregate {
-        val symbol = if (this.symbol == "TBD") {
-            stockTrade.symbol
-        } else {
-            this.symbol
+        if (symbol == initial) {
+            return StockTradeAggregate(stockTrade.symbol, this.numberOfTransactions + 1, this.balance + stockTrade.getDelta())
         }
-
-        val direction = when (stockTrade.side) {
-            "BUY" -> 1
-            "SELL" -> -1
-            else -> 0
-        }
-        val delta = stockTrade.quantity * stockTrade.price * direction
-
-        return StockTradeAggregate(symbol, this.numberOfTransactions + 1, this.balance + delta)
+        return StockTradeAggregate(symbol, this.numberOfTransactions + 1, this.balance + stockTrade.getDelta())
     }
+
+    companion object {
+        const val initial = "INITIAL"
+    }
+}
+
+fun initialStocktradeAggregate(): StockTradeAggregate {
+    return StockTradeAggregate(initial, 0, 0)
 }
 
 class StockTradeSerde :
